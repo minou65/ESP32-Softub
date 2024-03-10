@@ -80,6 +80,8 @@ int runstate = runstate_startup;
 const int temp_min = 50;
 const int temp_max = 110;
 
+bool tempInCelsius = true;
+
 // The time of the last transition. This may be used differently by different states.
 uint32_t runstate_last_transition_millis = 0;
 
@@ -191,15 +193,30 @@ void temp_adjust(int amount)
     temp_adjusted_millis = millis();
 }
 
-double adc_to_farenheit(double reading)
+double fahrenheitToCelsius(double fahrenheit){
+    double celsius;
+
+    celsius = (fahrenheit - 32.0) * 5.0 / 9.0;
+    return celsius;
+}
+
+double adcToTemperatur(double reading)
 {
     // Scale the reading to voltage
     reading *= ADC_DIVISOR;
 
+
     // The temperature sensors seem to be LM34s.
     // (Linear, 750mv at 75 degrees F, slope 10mv/degree F)
     // Basically, temperature in F is voltage * 100.
-    return (reading * 100);
+    double _fahrenheit = (reading * 100);
+
+    if (tempInCelsius) {
+        return fahrenheitToCelsius(_fahrenheit);
+    }
+    else {
+        return _fahrenheit;
+    }
 }
 
 void runstate_transition()
@@ -306,14 +323,14 @@ void read_temp_sensors()
 
     // Calculate the average smoothed temp of the first two sensors and save it as the water temp.
     avg_reading /= 2;
-    last_temp = adc_to_farenheit(avg_reading);
+    last_temp = adcToTemperatur(avg_reading);
 
     // If the smoothed readings from sensors 0 and 1 ever differ by more than panic_sensor_difference degrees, panic.
-    if (fabs(adc_to_farenheit(smoothed_sensor_reading(0)) - adc_to_farenheit(smoothed_sensor_reading(1))) > panic_sensor_difference)
+    if (fabs(adcToTemperatur(smoothed_sensor_reading(0)) - adcToTemperatur(smoothed_sensor_reading(1))) > panic_sensor_difference)
     {
         panic("sensor readings diverged (%s vs %s)",
-            dtostr(adc_to_farenheit(smoothed_sensor_reading(0))).c_str(),
-            dtostr(adc_to_farenheit(smoothed_sensor_reading(1))).c_str());
+            dtostr(adcToTemperatur(smoothed_sensor_reading(0))).c_str(),
+            dtostr(adcToTemperatur(smoothed_sensor_reading(1))).c_str());
     }
 
     // If calculated temperature is over our defined limit, panic.
@@ -409,7 +426,7 @@ void display_temperature(int temp)
 
 void display_panic()
 {
-    display_temperature(adc_to_farenheit(smoothed_sensor_reading(panic_flash ? 0 : 1)));
+    display_temperature(adcToTemperatur(smoothed_sensor_reading(panic_flash ? 0 : 1)));
     display_heat(!panic_flash);
     display_filter(panic_flash);
 }
