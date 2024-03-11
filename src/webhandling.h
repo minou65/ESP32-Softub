@@ -77,9 +77,9 @@ private:
 	char TimeZoneId[STRING_LEN];
 };
 
-class TubeScheduler : public iotwebconf::ChainedParameterGroup {
+class TubScheduler : public iotwebconf::ChainedParameterGroup {
 public:
-	TubeScheduler(ChainedParameterGroup* _nextGroup = nullptr) : ChainedParameterGroup("tubescheduler", "Scheduler") {
+	TubScheduler(ChainedParameterGroup* _nextGroup = nullptr) : ChainedParameterGroup("tubescheduler", "Scheduler") {
 		snprintf(TimeOnId, STRING_LEN, "%s-on", this->getId());
 		snprintf(TimeOffId, STRING_LEN, "%s-off", this->getId());
 
@@ -88,27 +88,54 @@ public:
 		this->setNext(_nextGroup);
 	}
 
-	String On() { return String(TimeOn); };
-	String Off() { return String(TimeOff); };
+	String On() { return String(TimeOnValue); };
+	String Off() { return String(TimeOffValue); };
 
 private:
-	iotwebconf::TimeParameter TimeOnParam = iotwebconf::TimeParameter("On", TimeOnId, TimeOnId, STRING_LEN, "00:00");
-	iotwebconf::TimeParameter TimeOffParam = iotwebconf::TimeParameter("Off", TimeOnId, TimeOnId, STRING_LEN, "24:00");
+	iotwebconf::TimeParameter TimeOnParam = iotwebconf::TimeParameter("On", TimeOnId, TimeOnValue, STRING_LEN, "00:00");
+	iotwebconf::TimeParameter TimeOffParam = iotwebconf::TimeParameter("Off", TimeOffId, TimeOffValue, STRING_LEN, "24:00");
 
-	char TimeOn[STRING_LEN];
-	char TimeOff[STRING_LEN];
+	char TimeOnValue[STRING_LEN];
+	char TimeOffValue[STRING_LEN];
 
 	char TimeOnId[STRING_LEN];
 	char TimeOffId[STRING_LEN];
 
 };
 
+class TubTemperatur : public iotwebconf::ParameterGroup {
+public:
+	TubTemperatur() : ParameterGroup("tubetemperatur", "Temperatur") {
+		snprintf(TempInCelsiusId, STRING_LEN, "%s-checkbox", this->getId());
+		snprintf(TempDesiredId, STRING_LEN, "%s-desired", this->getId());
+
+		this->addItem(&this->TempInCelsiusParam);
+		this->addItem(&this->TempDesiredParam);
+
+	}
+
+	bool InCelsius() { return TempInCelsiusParam.isChecked(); };
+	String Desired() { return String(atoi(TempDesiredValue)); };
+
+private:
+	iotwebconf::CheckboxParameter TempInCelsiusParam = iotwebconf::CheckboxParameter("in &deg;Celsius", TempInCelsiusId, TempInCelsiusValue, STRING_LEN, true);
+	iotwebconf::NumberParameter TempDesiredParam = iotwebconf::NumberParameter("Desired", TempDesiredId, TempDesiredValue, STRING_LEN, "35", "10...110", "min='10' max='110' step='1'");
+
+	char TempInCelsiusValue[STRING_LEN];
+	char TempInCelsiusId[STRING_LEN];
+
+	char TempDesiredValue[STRING_LEN];
+	char TempDesiredId[STRING_LEN];
+
+};
+
 extern NTPConfig ntpConfig;
-extern TubeScheduler TubeScheduler1;
-extern TubeScheduler TubeScheduler2;
-extern TubeScheduler TubeScheduler3;
-extern TubeScheduler TubeScheduler4;
-extern TubeScheduler TubeScheduler5;
+extern TubTemperatur tubTemperatur;
+extern TubScheduler TubScheduler1;
+extern TubScheduler TubScheduler2;
+extern TubScheduler TubScheduler3;
+extern TubScheduler TubScheduler4;
+extern TubScheduler TubScheduler5;
 
 
 #endif

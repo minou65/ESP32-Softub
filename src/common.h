@@ -31,5 +31,14 @@ enum {
     runstate_panic
 };
 
+extern int runstate;
+extern void enter_state(int state);
+extern const char* state_name(int state);
+
+extern const int temp_min;
+extern const int temp_max;
+extern bool tempInCelsius;
+extern int temp_setting;
+extern void temp_adjust(int amount);
 #endif
 

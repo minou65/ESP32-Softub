@@ -535,7 +535,7 @@ bool check_scheduler() {
 
     String _time = _rtc.getTime("%H:%M");
 
-    TubeScheduler* _scheduler = &TubeScheduler1;
+    TubScheduler* _scheduler = &TubScheduler1;
     while (_scheduler != nullptr) {
         if (_scheduler->isActive()) {
             if ((_time >= _scheduler->On()) && (_time < _scheduler->Off())) {
@@ -543,7 +543,7 @@ bool check_scheduler() {
             }
             _active = true;
         }
-        _scheduler = (TubeScheduler*)_scheduler->getNext();
+        _scheduler = (TubScheduler*)_scheduler->getNext();
     }
 
     // No scheduler defined, so we return true
