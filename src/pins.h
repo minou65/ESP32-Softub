@@ -10,7 +10,7 @@
 #endif
 
 #define pin_pump GPIO_NUM_2
-const int pin_temp[] = { GPIO_NUM_12, GPIO_NUM_13 };
+const int pin_temp[] = { GPIO_NUM_32, GPIO_NUM_33 };
 
 // Make sure the pins shared with hardware SPI via the shield are high-impedance.
 // The spot for pin 13 is defined as "no connection" on this one

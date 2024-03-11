@@ -1,7 +1,6 @@
+#include <Arduino.h>
 #include "common.h"
 #include "webhandling.h"
-#include <Arduino.h>
-
 
 //////////////////////////////////////////////////
 // Feature defines
@@ -11,7 +10,6 @@
 #include <esp_task_wdt.h>
 #include "pins.h"
 #include "ntp.h"
-
 
 // ESP32 has 12 bit ADCs
 const int ADC_RESOLUTION = 4096;
@@ -193,7 +191,7 @@ void temp_adjust(int amount)
     temp_adjusted_millis = millis();
 }
 
-double fahrenheitToCelsius(double fahrenheit){
+double fahrenheitToCelsius(double fahrenheit) {
     double celsius;
 
     celsius = (fahrenheit - 32.0) * 5.0 / 9.0;
@@ -438,7 +436,7 @@ void display_panic_countdown(int countdown)
     display_heat(true);
 }
 
-void display_vcc(){}
+void display_vcc() {}
 
 void display_send()
 {
@@ -461,9 +459,17 @@ void set_pump(bool running)
     }
 }
 
-void setup()
-{
+void setup(){
+    Serial.begin(115200);
+
+    // wait for serial port to open on native usb devices
+    while (!Serial) {
+        delay(1);
+    }
+
     watchdog_init();
+    wifiInit();
+    NTPInit();
 
     serial_debug_init();
 
@@ -497,7 +503,6 @@ void setup()
     display_vcc();
     enter_state(runstate_startup);
 
-    NTPInit();
 }
 
 void check_temp_validity()
@@ -572,7 +577,7 @@ void loop() {
     read_temp_sensors();
     read_buttons();
     check_temp_validity();
-    
+
     bool scheduler_enabled = check_scheduler();
     bool jets_pushed = false;
     bool lights_pushed = false;
@@ -796,11 +801,11 @@ void loop() {
     display_vcc();
     display_send();
 
-    loop_time = micros() - loop_start_micros;
-    if (loop_time < loop_microseconds)
-    {
-        uint32_t msRemaining = loop_microseconds - loop_time;
-        // debug("loop time %ld, start %ld, remaining %ld", loop_time, loop_start_micros, msRemaining);
-        delayMicroseconds(msRemaining);
-    }
+    //loop_time = micros() - loop_start_micros;
+    //if (loop_time < loop_microseconds)
+    //{
+    //    uint32_t msRemaining = loop_microseconds - loop_time;
+    //    // debug("loop time %ld, start %ld, remaining %ld", loop_time, loop_start_micros, msRemaining);
+    //    delayMicroseconds(msRemaining);
+    //}
 }

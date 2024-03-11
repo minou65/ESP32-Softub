@@ -28,7 +28,7 @@
 const char wifiInitialApPassword[] = "123456789";
 
 // -- Initial name of the Thing. Used e.g. as SSID of the own Access Point.
-const char thingName[] = "MySoftube";
+const char thingName[] = "ESP32-Softub";
 
 // -- Configuration specific key. The value should be modified if config structure was changed.
 #define CONFIG_VERSION "A1"
@@ -37,7 +37,7 @@ const char thingName[] = "MySoftube";
 //      password to buld an AP. (E.g. in case of lost password)
 #define CONFIG_PIN  -1
 
-#define STRING_LEN 50
+#define STRING_LEN 80
 #define NUMBER_LEN 6
 
 static WiFiClient wifiClient;
@@ -79,13 +79,12 @@ private:
 
 class TubScheduler : public iotwebconf::ChainedParameterGroup {
 public:
-	TubScheduler(ChainedParameterGroup* _nextGroup = nullptr) : ChainedParameterGroup("tubescheduler", "Scheduler") {
+	TubScheduler() : ChainedParameterGroup("tubscheduler", "Scheduler") {
 		snprintf(TimeOnId, STRING_LEN, "%s-on", this->getId());
 		snprintf(TimeOffId, STRING_LEN, "%s-off", this->getId());
 
 		this->addItem(&this->TimeOnParam);
 		this->addItem(&this->TimeOffParam);
-		this->setNext(_nextGroup);
 	}
 
 	String On() { return String(TimeOnValue); };
@@ -93,7 +92,7 @@ public:
 
 private:
 	iotwebconf::TimeParameter TimeOnParam = iotwebconf::TimeParameter("On", TimeOnId, TimeOnValue, STRING_LEN, "00:00");
-	iotwebconf::TimeParameter TimeOffParam = iotwebconf::TimeParameter("Off", TimeOffId, TimeOffValue, STRING_LEN, "24:00");
+	iotwebconf::TimeParameter TimeOffParam = iotwebconf::TimeParameter("Off", TimeOffId, TimeOffValue, STRING_LEN, "23:59");
 
 	char TimeOnValue[STRING_LEN];
 	char TimeOffValue[STRING_LEN];
@@ -105,7 +104,7 @@ private:
 
 class TubTemperatur : public iotwebconf::ParameterGroup {
 public:
-	TubTemperatur() : ParameterGroup("tubetemperatur", "Temperatur") {
+	TubTemperatur() : ParameterGroup("tubtemperatur", "Temperatur") {
 		snprintf(TempInCelsiusId, STRING_LEN, "%s-checkbox", this->getId());
 		snprintf(TempDesiredId, STRING_LEN, "%s-desired", this->getId());
 
@@ -118,7 +117,7 @@ public:
 	String Desired() { return String(atoi(TempDesiredValue)); };
 
 private:
-	iotwebconf::CheckboxParameter TempInCelsiusParam = iotwebconf::CheckboxParameter("in &deg;Celsius", TempInCelsiusId, TempInCelsiusValue, STRING_LEN, true);
+	iotwebconf::CheckboxParameter TempInCelsiusParam = iotwebconf::CheckboxParameter("show in &deg;Celsius", TempInCelsiusId, TempInCelsiusValue, STRING_LEN, true);
 	iotwebconf::NumberParameter TempDesiredParam = iotwebconf::NumberParameter("Desired", TempDesiredId, TempDesiredValue, STRING_LEN, "35", "10...110", "min='10' max='110' step='1'");
 
 	char TempInCelsiusValue[STRING_LEN];

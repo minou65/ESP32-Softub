@@ -36,10 +36,12 @@ NTPConfig ntpConfig = NTPConfig();
 TubTemperatur tubTemperatur = TubTemperatur();
 
 TubScheduler TubScheduler5 = TubScheduler();
-TubScheduler TubScheduler4 = TubScheduler(TubScheduler5);
-TubScheduler TubScheduler3 = TubScheduler(TubScheduler4);
-TubScheduler TubScheduler2 = TubScheduler(TubScheduler3);
-TubScheduler TubScheduler1 = TubScheduler(TubScheduler2);
+TubScheduler TubScheduler4 = TubScheduler();
+TubScheduler TubScheduler3 = TubScheduler();
+TubScheduler TubScheduler2 = TubScheduler();
+TubScheduler TubScheduler1 = TubScheduler();
+
+iotwebconf::OptionalGroupHtmlFormatProvider optionalGroupHtmlFormatProvider;
 
 void wifiInit() {
     Serial.begin(115200);
@@ -48,8 +50,15 @@ void wifiInit() {
 
     iotWebConf.setStatusPin(STATUS_PIN, ON_LEVEL);
     iotWebConf.setConfigPin(CONFIG_PIN);
+    iotWebConf.setHtmlFormatProvider(&optionalGroupHtmlFormatProvider);
 
     iotWebConf.addParameterGroup(&tubTemperatur);
+
+    TubScheduler1.setNext(&TubScheduler2);
+    TubScheduler2.setNext(&TubScheduler3);
+    TubScheduler3.setNext(&TubScheduler4);
+    TubScheduler4.setNext(&TubScheduler5);
+
 
     iotWebConf.addParameterGroup(&TubScheduler1);
     iotWebConf.addParameterGroup(&TubScheduler2);
@@ -64,11 +73,16 @@ void wifiInit() {
 
     iotWebConf.getApTimeoutParameter()->visible = true;
 
+    // -- Initializing the configuration.
+    iotWebConf.init();
+
+    convertParams();
+
     // -- Set up required URL handlers on the web server.
     server.on("/", handleRoot);
     server.on("/set", HTTP_GET, []() { handleSet(); });
     server.on("/reboot", HTTP_GET, []() { handleReboot(); });
-    server.on("/favicon.ico", []() { handleFavIcon(); });
+    //server.on("/favicon.ico", []() { handleFavIcon(); });
     server.on("/config", [] { iotWebConf.handleConfig(); });
     server.onNotFound([]() { iotWebConf.handleNotFound(); });
 
@@ -84,6 +98,12 @@ void handleRoot() {
     if (iotWebConf.handleCaptivePortal()){
         return;
     }
+    String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
+    s += "<title>IotWebConf 01 Minimal</title></head><body>";
+    s += "Go to <a href='config'>configure page</a> to change settings.";
+    s += "</body></html>\n";
+
+    server.send(200, "text/html", s);
 };
 
 
