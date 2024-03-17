@@ -12,6 +12,10 @@
 #define pin_pump GPIO_NUM_2
 const int pin_temp[] = { GPIO_NUM_32, GPIO_NUM_33 };
 
+#define pin_red GPIO_NUM_12
+#define pin_green GPIO_NUM_13
+#define pin_blue GPIO_NUM_14
+
 // Make sure the pins shared with hardware SPI via the shield are high-impedance.
 // The spot for pin 13 is defined as "no connection" on this one
 
