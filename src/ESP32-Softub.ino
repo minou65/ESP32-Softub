@@ -1,3 +1,4 @@
+#include "Light.h"
 #include <Arduino.h>
 #include "common.h"
 #include "webhandling.h"
@@ -6,10 +7,19 @@
 // Feature defines
 // #define SERIAL_DEBUG 1
 
-
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_timer.h"
 #include <esp_task_wdt.h>
 #include "pins.h"
 #include "ntp.h"
+
+char Version[] = "0.0.0.1";
+bool gParamsChanged = true;
+bool gSaveParams = false;
+
+// Task handle (Core 0 on ESP32)
+TaskHandle_t TaskHandle;
 
 // ESP32 has 12 bit ADCs
 const int ADC_RESOLUTION = 4096;
@@ -191,30 +201,15 @@ void temp_adjust(int amount)
     temp_adjusted_millis = millis();
 }
 
-double fahrenheitToCelsius(double fahrenheit) {
-    double celsius;
-
-    celsius = (fahrenheit - 32.0) * 5.0 / 9.0;
-    return celsius;
-}
-
-double adcToTemperatur(double reading)
+double adc_to_farenheit(double reading)
 {
     // Scale the reading to voltage
     reading *= ADC_DIVISOR;
 
-
     // The temperature sensors seem to be LM34s.
     // (Linear, 750mv at 75 degrees F, slope 10mv/degree F)
     // Basically, temperature in F is voltage * 100.
-    double _fahrenheit = (reading * 100);
-
-    if (tempInCelsius) {
-        return fahrenheitToCelsius(_fahrenheit);
-    }
-    else {
-        return _fahrenheit;
-    }
+    return (reading * 100);
 }
 
 void runstate_transition()
@@ -321,14 +316,14 @@ void read_temp_sensors()
 
     // Calculate the average smoothed temp of the first two sensors and save it as the water temp.
     avg_reading /= 2;
-    last_temp = adcToTemperatur(avg_reading);
+    last_temp = adc_to_farenheit(avg_reading);
 
     // If the smoothed readings from sensors 0 and 1 ever differ by more than panic_sensor_difference degrees, panic.
-    if (fabs(adcToTemperatur(smoothed_sensor_reading(0)) - adcToTemperatur(smoothed_sensor_reading(1))) > panic_sensor_difference)
+    if (fabs(adc_to_farenheit(smoothed_sensor_reading(0)) - adc_to_farenheit(smoothed_sensor_reading(1))) > panic_sensor_difference)
     {
         panic("sensor readings diverged (%s vs %s)",
-            dtostr(adcToTemperatur(smoothed_sensor_reading(0))).c_str(),
-            dtostr(adcToTemperatur(smoothed_sensor_reading(1))).c_str());
+            dtostr(adc_to_farenheit(smoothed_sensor_reading(0))).c_str(),
+            dtostr(adc_to_farenheit(smoothed_sensor_reading(1))).c_str());
     }
 
     // If calculated temperature is over our defined limit, panic.
@@ -417,14 +412,16 @@ void display_heat(bool on)
     display_set_bits(1, 0x20, on);
 }
 
-void display_temperature(int temp)
-{
+void display_temperature(int temp){
+    if (tubTemperatur.InCelsius()) {
+		temp = fahrenheitToCelsius(temp);
+	}
     display_set_digits(temp / 100, (temp / 10) % 10, temp % 10);
 }
 
 void display_panic()
 {
-    display_temperature(adcToTemperatur(smoothed_sensor_reading(panic_flash ? 0 : 1)));
+    display_temperature(adc_to_farenheit(smoothed_sensor_reading(panic_flash ? 0 : 1)));
     display_heat(!panic_flash);
     display_filter(panic_flash);
 }
@@ -503,6 +500,18 @@ void setup(){
     display_vcc();
     enter_state(runstate_startup);
 
+    xTaskCreatePinnedToCore(
+        loop2, /* Function to implement the task */
+        "TaskHandle", /* Name of the task */
+        10000,  /* Stack size in words */
+        NULL,  /* Task input parameter */
+        0,  /* Priority of the task */
+        &TaskHandle,  /* Task handle. */
+        0 /* Core where the task should run */
+    );
+
+    initLight();
+
 }
 
 void check_temp_validity()
@@ -560,16 +569,12 @@ bool check_scheduler() {
 
 }
 
+
 // Make this a global so it can be displayed by the debug web endpoint
 uint32_t loop_time = 0;
 
 void loop() {
-
-    wifiLoop();
-    if (iotWebConf.getState() == iotwebconf::OnLine) {
-        NTPloop();
-    }
-
+    loopLight();
 
     uint32_t loop_start_micros = micros();
     uint32_t loop_start_millis = millis();
@@ -628,20 +633,17 @@ void loop() {
     uint32_t millis_since_button_change = loop_start_millis - buttons_last_transition_millis;
     uint32_t seconds_since_button_change = millis_since_button_change / 1000l;
 
-    if (temp_adjusted)
-    {
+    if (temp_adjusted){
         uint32_t millis_since_temp_adjust = millis() - temp_adjusted_millis;
 
         // See if the temp-adjusted display window has expired.
-        if (millis_since_temp_adjust > temp_adjusted_display_millis)
-        {
+        if (millis_since_temp_adjust > temp_adjusted_display_millis){
             temp_adjusted = false;
+            gSaveParams = true;
         }
-        else
-        {
+        else {
             if (((buttons == button_up) || (buttons == button_down)) &&
-                (millis_since_temp_adjust <= millis_since_button_change))
-            {
+                (millis_since_temp_adjust <= millis_since_button_change)) {
                 // If the user has been holding down the up or down button since the last temp adjustment,
                 // and the last temp adjustment was over the repeat time (1/2s for the first adjustment, 1/4s for the next 1.5 seconds, 1/10s thereafter), 
                 // adjust again.
@@ -653,8 +655,7 @@ void loop() {
                     repeat_time = 250;
                 }
 
-                if (millis_since_temp_adjust >= repeat_time)
-                {
+                if (millis_since_temp_adjust >= repeat_time) {
                     temp_adjust((buttons == button_up) ? 1 : -1);
                 }
             }
@@ -801,11 +802,27 @@ void loop() {
     display_vcc();
     display_send();
 
-    //loop_time = micros() - loop_start_micros;
-    //if (loop_time < loop_microseconds)
-    //{
-    //    uint32_t msRemaining = loop_microseconds - loop_time;
-    //    // debug("loop time %ld, start %ld, remaining %ld", loop_time, loop_start_micros, msRemaining);
-    //    delayMicroseconds(msRemaining);
-    //}
+    loop_time = micros() - loop_start_micros;
+    if (loop_time < loop_microseconds)
+    {
+        uint32_t msRemaining = loop_microseconds - loop_time;
+        // debug("loop time %ld, start %ld, remaining %ld", loop_time, loop_start_micros, msRemaining);
+
+        TickType_t ticks = pdMS_TO_TICKS(msRemaining / 1000); // Umrechnung in Ticks
+        vTaskDelay(ticks);
+
+        // delayMicroseconds(msRemaining);
+    }
+
+    gParamsChanged = false;
 }
+
+void loop2(void* parameter) {
+    for (;;) {   // Endless loop
+        wifiLoop();
+        if (iotWebConf.getState() == iotwebconf::OnLine) {
+            NTPloop();
+        }
+    }
+}
+
