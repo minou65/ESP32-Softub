@@ -1,7 +1,7 @@
 # Softub
 
-This prject is based on this greate work from morow Williams
-https://github.com/minou65/softub
+This project is based on this greate work from Monroe Williams
+https://github.com/monroewilliams/softub
 
 Most importantly, I added schedulers. This allows you to configure up to 5 different switch-on times.
 
@@ -12,6 +12,7 @@ Most importantly, I added schedulers. This allows you to configure up to 5 diffe
   - [Website](#website)
     - [Root](#root)
     - [Configuration](#configuration)
+    - [API](#api)
   - [WiFi](#wifi)
     - [Default password](#default-password)
     - [Default IP address](#default-ip-address)
