@@ -19,9 +19,5 @@ const int pin_temp[] = { GPIO_NUM_32, GPIO_NUM_33 };
 #define PANEL_TX GPIO_NUM_8
 #define PANEL_RX GPIO_NUM_7
 
-
-#define TSENS_OFFSET (-113)
-#define TSENS_MULTIPLIER (4.0)
-
 #endif
 

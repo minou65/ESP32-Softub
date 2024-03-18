@@ -50,6 +50,9 @@ const double ADC_AREF_VOLTAGE = 1.1 * 2.0;
 
 const double ADC_DIVISOR = ADC_AREF_VOLTAGE / double(ADC_RESOLUTION);
 
+#define TSENS_OFFSET (-113)
+#define TSENS_MULTIPLIER (4.0)
+
 #ifdef SERIAL_DEBUG
 #ifndef SERIAL_DEBUG_SPEED
 #define SERIAL_DEBUG_SPEED 9600
