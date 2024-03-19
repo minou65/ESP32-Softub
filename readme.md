@@ -13,6 +13,8 @@ Most importantly, I added schedulers. This allows you to configure up to 5 diffe
     - [Root](#root)
     - [Configuration](#configuration)
     - [API](#api)
+      - [set](#set)
+    - [reboot](#reboot)
   - [WiFi](#wifi)
     - [Default password](#default-password)
     - [Default IP address](#default-ip-address)
@@ -36,7 +38,24 @@ Most importantly, I added schedulers. This allows you to configure up to 5 diffe
 ![alt text](img/configPage.png)
 
 ### API
+#### set
+the set component handles the tub settings. You can enable/disable the jets or the light. You can also increase or decrease the temperature.
 
+| Method | Name | Value | Description | Example |
+| ------ | ---- | ------| ----------- | ------- |
+| get | jets | on | starts the jets | [url]/set?jets=on |
+| get | jets | off | stops the jets | [url]/set?jets=off |
+| get | jets | toggle | start or stop the jets | [url]/set?jets=toggle |
+| get | light | on | enable the lamp | [url]/set?jlight=on |
+| get | light | off | disable the lamp |  [url]/set?light=off |
+| get | light | toggle | enable or disable the lamp | [url]/set?light=toggle |
+| get | temp | up | increase the temperatur | [url]/set?temp=up |
+| get | temp | down | decrease the temperature | [url]/set?temp=down |
+| get | temp | ### | ### is a number in the allowed range and set the temperatur direct to this value |  [url]/set?temp=35 |
+
+### reboot
+the reboot compnent reboots the controller. No parameters are needed
+[url]/reboot
 
 ## WiFi
 ### Default password
