@@ -14,7 +14,7 @@ Most importantly, I added schedulers. This allows you to configure up to 5 diffe
     - [Configuration](#configuration)
     - [API](#api)
       - [set](#set)
-    - [reboot](#reboot)
+      - [reboot](#reboot)
   - [WiFi](#wifi)
     - [Default password](#default-password)
     - [Default IP address](#default-ip-address)
@@ -53,7 +53,7 @@ the set component handles the tub settings. You can enable/disable the jets or t
 | get | temp | down | decrease the temperature | [url]/set?temp=down |
 | get | temp | ### | ### is a number in the allowed range and set the temperatur direct to this value |  [url]/set?temp=35 |
 
-### reboot
+#### reboot
 the reboot compnent reboots the controller. No parameters are needed
 [url]/reboot
 
